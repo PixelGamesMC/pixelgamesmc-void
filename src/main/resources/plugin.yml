@@ -1,0 +1,8 @@
+name: PixelGamesMC-Void
+author: NitrinCloud
+version: 0.0.1
+main: eu.pixelgamesmc.void.Void
+api-version: 1.19
+
+commands:
+  world:
