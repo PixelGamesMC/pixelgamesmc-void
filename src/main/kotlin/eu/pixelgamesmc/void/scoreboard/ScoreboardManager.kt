@@ -56,6 +56,13 @@ object ScoreboardManager {
 
     private fun unsafe_createScoreboard(player: Player, firstPlayer: DatabasePlayer?, secondPlayer: DatabasePlayer?, thirdPlayer: DatabasePlayer?, players: List<DatabasePlayer>) {
         val scoreboard = Bukkit.getScoreboardManager().newScoreboard
+        val team = scoreboard.registerNewTeam("user")
+        team.color(NamedTextColor.GRAY)
+
+        for (onlinePlayer in Bukkit.getOnlinePlayers()) {
+            team.addPlayer(onlinePlayer)
+        }
+
         val objective = scoreboard.registerNewObjective("sidebar", Criteria.DUMMY, Component.text("\uEff1"))
         objective.displaySlot = DisplaySlot.SIDEBAR
         objective.getScore("§c").score = 7

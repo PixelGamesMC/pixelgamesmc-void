@@ -5,8 +5,10 @@ import eu.pixelgamesmc.void.configuration.ServerConfiguration
 import eu.pixelgamesmc.void.database.collection.PlayerCollection
 import eu.pixelgamesmc.void.scoreboard.ScoreboardManager
 import eu.pixelgamesmc.void.utils.PREFIX
+import io.papermc.paper.event.player.AsyncChatEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
@@ -16,6 +18,7 @@ import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.AsyncPlayerChatEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
@@ -46,7 +49,7 @@ class PlayerListener: Listener {
         }
 
         PlayerCollection.playerJoin(player.uniqueId, player.name)
-        ScoreboardManager.createScoreboard(player)
+        ScoreboardManager.createScoreboards()
         ScoreboardManager.updateTablists()
 
         val scheduler = Bukkit.getScheduler()
@@ -164,5 +167,15 @@ class PlayerListener: Listener {
         if (event.player.world.name == ServerConfiguration.getWorldLobby()) {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun chat(event: AsyncChatEvent) {
+        for (player in Bukkit.getOnlinePlayers()) {
+            player.sendMessage(Component.text(event.player.name, NamedTextColor.GRAY, TextDecoration.BOLD)
+                .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                .append(event.originalMessage().color(NamedTextColor.GRAY)))
+        }
+        event.isCancelled = true
     }
 }
