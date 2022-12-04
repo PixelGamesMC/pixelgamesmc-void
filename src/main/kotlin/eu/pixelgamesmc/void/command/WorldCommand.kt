@@ -49,7 +49,7 @@ class WorldCommand: CommandExecutor {
                     sender.sendMessage(PREFIX.append(Component.text("Du wirst zu deiner Welt teleportiert", NamedTextColor.GRAY)))
                     sender.performCommand("world teleport")
                 }
-            } else if (args[0].equals("teleport", ignoreCase = true)) {
+            } else if (args[0].equals("teleport", ignoreCase = true) || args[0].equals("tp", ignoreCase = true)) {
                 if (args.size == 1) {
                     val world: World? = Bukkit.getWorld(sender.uniqueId.toString())
 

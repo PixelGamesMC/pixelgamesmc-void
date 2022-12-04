@@ -80,6 +80,12 @@ class Void: JavaPlugin() {
                         .append(Component.text("ein ", NamedTextColor.GRAY))
                         .append(Component.text("Item", NamedTextColor.YELLOW))
                 )
+                player.sendMessage(
+                    prefix
+                        .append(Component.text("Mit ", NamedTextColor.GRAY))
+                        .append(Component.text("/world invite <name> ", NamedTextColor.YELLOW))
+                        .append(Component.text("kannst du Spieler auf deine Insel einladen", NamedTextColor.GRAY))
+                )
             }
         }, 0, 20*60*10)
     }

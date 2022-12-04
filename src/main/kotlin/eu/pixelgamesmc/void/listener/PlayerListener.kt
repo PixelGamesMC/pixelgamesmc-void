@@ -16,6 +16,7 @@ import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -38,11 +39,15 @@ class PlayerListener: Listener {
         val world = Bukkit.getWorld(ServerConfiguration.getWorldLobby())
 
         if (world != null) {
-            player.teleport(world.spawnLocation)
+            val location = world.spawnLocation.add(0.5, 0.0, 0.5)
+            location.yaw = 90f
+            location.pitch = 0f
+            player.teleport(location)
         }
 
         PlayerCollection.playerJoin(player.uniqueId, player.name)
         ScoreboardManager.createScoreboard(player)
+        ScoreboardManager.updateTablists()
 
         val scheduler = Bukkit.getScheduler()
         var time = 0
@@ -77,6 +82,8 @@ class PlayerListener: Listener {
     fun playerQuit(event: PlayerQuitEvent) {
         val player = event.player
         val uniqueId = player.uniqueId
+
+        ScoreboardManager.updateTablists()
 
         event.quitMessage(PREFIX.append(Component.text(player.name, NamedTextColor.YELLOW))
             .append(Component.text(" hat das Spiel verlassen", NamedTextColor.GRAY)))
@@ -148,6 +155,13 @@ class PlayerListener: Listener {
     @EventHandler
     fun playerFood(event: FoodLevelChangeEvent) {
         if (event.entity.world.name == ServerConfiguration.getWorldLobby()) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun interact(event: PlayerInteractEvent) {
+        if (event.player.world.name == ServerConfiguration.getWorldLobby()) {
             event.isCancelled = true
         }
     }
