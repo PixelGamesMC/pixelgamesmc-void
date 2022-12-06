@@ -35,15 +35,13 @@ class WorldCommand: CommandExecutor {
 
                 if (world == null) {
                     sender.sendMessage(PREFIX.append(Component.text("Welt wird geladen...", NamedTextColor.GRAY)))
-                    val worldCreator = WorldCreator(sender.uniqueId.toString())
-                    worldCreator.environment(World.Environment.NORMAL)
-                    worldCreator.type(WorldType.NORMAL)
-                    worldCreator.generator(object : ChunkGenerator() { })
-                    world = Bukkit.createWorld(worldCreator) ?: return false
+                    world = loadWorld(sender.uniqueId)
 
-                    world.spawnLocation = Location(world, 0.0, 42.0, 0.0)
-                    world.getBlockAt(world.spawnLocation.subtract(0.0, 2.0, 0.0)).type = Material.BEDROCK
-                    sender.teleport(world.spawnLocation)
+                    if (world != null) {
+                        sender.teleport(world.spawnLocation)
+                    } else {
+                        sender.sendMessage(PREFIX.append(Component.text("Fehler beim Laden der Welt", NamedTextColor.RED)))
+                    }
                 } else {
                     sender.sendMessage(PREFIX.append(Component.text("Welt existiert bereits", NamedTextColor.RED)))
                     sender.sendMessage(PREFIX.append(Component.text("Du wirst zu deiner Welt teleportiert", NamedTextColor.GRAY)))
@@ -61,6 +59,12 @@ class WorldCommand: CommandExecutor {
                     }
                 } else {
                     val name = args[1]
+
+                    if (name.equals(sender.name, ignoreCase = true)) {
+                        sender.performCommand("world teleport")
+                        return false
+                    }
+
                     val uuid = PlayerCollection.getUuid(name)
 
                     if (uuid == null) {
@@ -73,12 +77,20 @@ class WorldCommand: CommandExecutor {
                         return false
                     }
 
-                    val world: World? = Bukkit.getWorld(uuid.toString())
+                    var world: World? = Bukkit.getWorld(uuid.toString())
 
                     if (world == null) {
                         if (!Files.exists(Path.of(uuid.toString()))) {
                             sender.sendMessage(PREFIX.append(Component.text("Dieser Spieler hat keine Welt")))
                             return false
+                        }
+                        sender.sendMessage(PREFIX.append(Component.text("Welt wird geladen...", NamedTextColor.GRAY)))
+                        world = loadWorld(uuid)
+
+                        if (world != null) {
+                            sender.teleport(world.spawnLocation)
+                        } else {
+                            sender.sendMessage(PREFIX.append(Component.text("Fehler beim Laden der Welt", NamedTextColor.RED)))
                         }
                     } else {
                         sender.teleport(world.spawnLocation)
@@ -193,7 +205,7 @@ class WorldCommand: CommandExecutor {
                     }, 20*30)
                 } else {
                     if (invites[player.uniqueId] != null && invites[player.uniqueId]!!.contains(sender.uniqueId)) {
-                        invites[player.uniqueId]!!.remove(player.uniqueId)
+                        invites[player.uniqueId]!!.remove(sender.uniqueId)
 
                         if (args[0].equals("accept", ignoreCase = true)) {
                             val world = Bukkit.getWorld(player.uniqueId.toString()) ?: return false
@@ -203,12 +215,14 @@ class WorldCommand: CommandExecutor {
                             sender.teleport(world.spawnLocation)
                             player.sendMessage(
                                 PREFIX.append(Component.text(sender.name, NamedTextColor.YELLOW))
-                                .append(Component.text(" hat deine Einladung angenommen", NamedTextColor.GRAY)))
+                                .append(Component.text(" hat deine Einladung angenommen", NamedTextColor.GRAY))
+                            )
                         } else {
                             sender.sendMessage(PREFIX.append(Component.text("Du hast die Einladung abgelehnt", NamedTextColor.GRAY)))
                             player.sendMessage(
                                 PREFIX.append(Component.text(sender.name, NamedTextColor.YELLOW))
-                                .append(Component.text(" hat deine Einladung abgelehnt", NamedTextColor.GRAY)))
+                                .append(Component.text(" hat deine Einladung abgelehnt", NamedTextColor.GRAY))
+                            )
                         }
                     } else {
                         sender.sendMessage(PREFIX.append(Component.text("Du hast keine Einladung von dem Spieler erhalten oder sie ist bereits abgelaufen", NamedTextColor.RED)))
@@ -217,5 +231,17 @@ class WorldCommand: CommandExecutor {
             }
         }
         return false
+    }
+
+    private fun loadWorld(uuid: UUID): World? {
+        val worldCreator = WorldCreator(uuid.toString())
+        worldCreator.environment(World.Environment.NORMAL)
+        worldCreator.type(WorldType.NORMAL)
+        worldCreator.generator(object : ChunkGenerator() { })
+        val world = Bukkit.createWorld(worldCreator) ?: return null
+
+        world.spawnLocation = Location(world, 0.0, 42.0, 0.0)
+        world.getBlockAt(world.spawnLocation.subtract(0.0, 2.0, 0.0)).type = Material.BEDROCK
+        return world
     }
 }
