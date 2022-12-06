@@ -64,7 +64,7 @@ class PlayerListener: Listener {
                         val materials = Material.values()
                         val inventory = player.inventory
                         val contents = inventory.contents
-                        inventory.addItem(ItemStack(materials[Random.nextInt(materials.size)]))
+                        inventory.addItem(ItemStack(materials[Random.nextInt(1, materials.size)]))
 
                         if (!contents.contentEquals(inventory.contents)) {
                             PlayerCollection.addItem(player.uniqueId)
