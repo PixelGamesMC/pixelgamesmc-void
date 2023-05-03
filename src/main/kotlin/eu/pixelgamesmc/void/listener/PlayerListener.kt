@@ -167,6 +167,13 @@ class PlayerListener: Listener {
         }
     }
 
+    @EventHandler
+    fun interact(event: PlayerInteractEvent) {
+        if (event.player.world.name == ServerConfiguration.getWorldLobby()) {
+            event.isCancelled = true
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     fun drop(event: PlayerDropItemEvent) {
         if (event.player.world.name == ServerConfiguration.getWorldLobby()) {

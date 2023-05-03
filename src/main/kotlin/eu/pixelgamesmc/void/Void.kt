@@ -90,10 +90,12 @@ class Void: JavaPlugin() {
         scheduler.runTaskTimer(this, Runnable {
             for (player in Bukkit.getOnlinePlayers()) {
                 val uniqueId = player.uniqueId
-                if (locations[uniqueId] != null) {
-                    if (locations[uniqueId] == player.location) {
-                        away.add(uniqueId)
-                        player.sendMessage(PREFIX.append(Component.text("Du bist nun AFK", NamedTextColor.RED)))
+                if (!away.contains(uniqueId)) {
+                    if (locations[uniqueId] != null) {
+                        if (locations[uniqueId] == player.location) {
+                            away.add(uniqueId)
+                            player.sendMessage(PREFIX.append(Component.text("Du bist nun AFK", NamedTextColor.RED)))
+                        }
                     }
                 }
                 locations[uniqueId] = player.location
@@ -106,30 +108,34 @@ class Void: JavaPlugin() {
             val prefix = Component.text("Info", NamedTextColor.GREEN, TextDecoration.BOLD)
                 .append(Component.text(" » ", NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
             for (player in Bukkit.getOnlinePlayers()) {
-                if (next == 0) {
-                    player.sendMessage(
-                        prefix
-                            .append(Component.text("Wenn du runterfällst, behältst du alle ", NamedTextColor.GRAY))
-                            .append(Component.text("Items", NamedTextColor.YELLOW))
-                    )
-                    next = 1
-                } else if (next == 1) {
-                    player.sendMessage(
-                        prefix
-                            .append(Component.text("Du erhälst alle ", NamedTextColor.GRAY))
-                            .append(Component.text("30 Sekunden ", NamedTextColor.YELLOW))
-                            .append(Component.text("ein ", NamedTextColor.GRAY))
-                            .append(Component.text("Item", NamedTextColor.YELLOW))
-                    )
-                    next = 2
-                } else if (next == 2) {
-                    player.sendMessage(
-                        prefix
-                            .append(Component.text("Mit ", NamedTextColor.GRAY))
-                            .append(Component.text("/world invite <name> ", NamedTextColor.YELLOW))
-                            .append(Component.text("kannst du Spieler auf deine Insel einladen", NamedTextColor.GRAY))
-                    )
-                    next = 0
+                when (next) {
+                    0 -> {
+                        player.sendMessage(
+                            prefix
+                                .append(Component.text("Wenn du runterfällst, behältst du alle ", NamedTextColor.GRAY))
+                                .append(Component.text("Items", NamedTextColor.YELLOW))
+                        )
+                        next = 1
+                    }
+                    1 -> {
+                        player.sendMessage(
+                            prefix
+                                .append(Component.text("Du erhälst alle ", NamedTextColor.GRAY))
+                                .append(Component.text("30 Sekunden ", NamedTextColor.YELLOW))
+                                .append(Component.text("ein ", NamedTextColor.GRAY))
+                                .append(Component.text("Item", NamedTextColor.YELLOW))
+                        )
+                        next = 2
+                    }
+                    2 -> {
+                        player.sendMessage(
+                            prefix
+                                .append(Component.text("Mit ", NamedTextColor.GRAY))
+                                .append(Component.text("/world invite <name> ", NamedTextColor.YELLOW))
+                                .append(Component.text("kannst du Spieler auf deine Insel einladen", NamedTextColor.GRAY))
+                        )
+                        next = 0
+                    }
                 }
             }
         }, 0, 20*60*10)
