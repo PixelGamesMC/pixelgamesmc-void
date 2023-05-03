@@ -8,5 +8,6 @@ import net.kyori.adventure.text.format.TextDecoration
 
 val GSON: Gson = GsonBuilder().serializeNulls().setPrettyPrinting().create()
 
-val PREFIX = Component.text("Server", NamedTextColor.AQUA, TextDecoration.BOLD)
+val PREFIX = Component.text("ITEM", NamedTextColor.AQUA, TextDecoration.BOLD)
+    .append(Component.text("FIESTA", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
     .append(Component.text(" » ", NamedTextColor.DARK_GRAY))

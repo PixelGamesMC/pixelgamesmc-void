@@ -2,7 +2,7 @@ package eu.pixelgamesmc.void.command
 
 import eu.pixelgamesmc.void.Void
 import eu.pixelgamesmc.void.configuration.ServerConfiguration
-import eu.pixelgamesmc.void.database.collection.PlayerCollection
+import eu.pixelgamesmc.void.database.collection.DatabasePlayerCollection
 import eu.pixelgamesmc.void.utils.PREFIX
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -65,14 +65,14 @@ class WorldCommand: CommandExecutor {
                         return false
                     }
 
-                    val uuid = PlayerCollection.getUuid(name)
+                    val uuid = DatabasePlayerCollection.getInstance().getUuid(name)
 
                     if (uuid == null) {
                         sender.sendMessage(PREFIX.append(Component.text("Dieser Spieler war noch nie online", NamedTextColor.RED)))
                         return false
                     }
 
-                    if (!PlayerCollection.getFriends(uuid).contains(sender.uniqueId)) {
+                    if (!DatabasePlayerCollection.getInstance().getFriends(uuid).contains(sender.uniqueId.toString()) && !sender.hasPermission("pixelgamesmc.void.tp")) {
                         sender.sendMessage(PREFIX.append(Component.text("Du hast keine Berechtigung", NamedTextColor.RED)))
                         return false
                     }
@@ -106,11 +106,11 @@ class WorldCommand: CommandExecutor {
                 val player = Bukkit.getPlayer(name)
 
                 if (player != null) {
-                    if (!PlayerCollection.getFriends(sender.uniqueId).contains(player.uniqueId)) {
+                    if (!DatabasePlayerCollection.getInstance().getFriends(sender.uniqueId).contains(player.uniqueId.toString())) {
                         sender.sendMessage(PREFIX.append(Component.text("Dieser Spieler hat keine Berechtigung", NamedTextColor.RED)))
                         return false
                     }
-                    PlayerCollection.removeFriend(sender.uniqueId, player.uniqueId)
+                    DatabasePlayerCollection.getInstance().removeFriend(sender.uniqueId, player.uniqueId)
 
                     if (player.world.name == sender.uniqueId.toString()) {
                         val world = Bukkit.getWorld(ServerConfiguration.getWorldLobby())
@@ -129,19 +129,19 @@ class WorldCommand: CommandExecutor {
                         }
                     }
                 } else {
-                    val uuid = PlayerCollection.getUuid(name)
+                    val uuid = DatabasePlayerCollection.getInstance().getUuid(name)
 
                     if (uuid == null) {
                         sender.sendMessage(PREFIX.append(Component.text("Dieser Spieler war noch nie online", NamedTextColor.RED)))
                         return false
                     }
 
-                    if (!PlayerCollection.getFriends(uuid).contains(sender.uniqueId)) {
+                    if (!DatabasePlayerCollection.getInstance().getFriends(uuid).contains(sender.uniqueId.toString())) {
                         sender.sendMessage(PREFIX.append(Component.text("Dieser Spieler hat keine Berechtigung", NamedTextColor.RED)))
                         return false
                     }
 
-                    PlayerCollection.removeFriend(sender.uniqueId, uuid)
+                    DatabasePlayerCollection.getInstance().removeFriend(sender.uniqueId, uuid)
                 }
                 sender.sendMessage(PREFIX.append(Component.text(name, NamedTextColor.YELLOW))
                     .append(Component.text(" wurde entfernt", NamedTextColor.GRAY)))
@@ -164,7 +164,7 @@ class WorldCommand: CommandExecutor {
                 }
 
                 if (args[0].equals("invite", ignoreCase = true)) {
-                    if (PlayerCollection.getFriends(sender.uniqueId).contains(player.uniqueId)) {
+                    if (DatabasePlayerCollection.getInstance().getFriends(sender.uniqueId).contains(player.uniqueId.toString())) {
                         sender.sendMessage(Component.text("Dieser Spieler ist schon Teil deiner Insel", NamedTextColor.RED))
                         return false
                     }
@@ -210,7 +210,7 @@ class WorldCommand: CommandExecutor {
                         if (args[0].equals("accept", ignoreCase = true)) {
                             val world = Bukkit.getWorld(player.uniqueId.toString()) ?: return false
 
-                            PlayerCollection.addFriend(player.uniqueId, sender.uniqueId)
+                            DatabasePlayerCollection.getInstance().addFriend(player.uniqueId, sender.uniqueId)
 
                             sender.teleport(world.spawnLocation)
                             player.sendMessage(
@@ -239,6 +239,7 @@ class WorldCommand: CommandExecutor {
         worldCreator.type(WorldType.NORMAL)
         worldCreator.generator(object : ChunkGenerator() { })
         val world = Bukkit.createWorld(worldCreator) ?: return null
+        world.difficulty = Difficulty.NORMAL
 
         world.spawnLocation = Location(world, 0.0, 42.0, 0.0)
         world.getBlockAt(world.spawnLocation.subtract(0.0, 2.0, 0.0)).type = Material.BEDROCK

@@ -1,20 +1,26 @@
 package eu.pixelgamesmc.void.database.collection
 
 import com.mongodb.client.MongoCollection
-import eu.pixelgamesmc.void.database.Database
 import eu.pixelgamesmc.void.database.DatabasePlayer
 import org.litote.kmongo.*
 import java.util.UUID
 
-object PlayerCollection {
+class DatabasePlayerCollection(collection: MongoCollection<DatabasePlayer>): PixelCollection<DatabasePlayer>(collection), PlayerCollection {
 
-    private lateinit var collection: MongoCollection<DatabasePlayer>
+    companion object {
 
-    fun load() {
-        collection = Database.database.getCollectionOfName("players")
+        private lateinit var instance: DatabasePlayerCollection
+
+        fun getInstance(): DatabasePlayerCollection {
+            return instance
+        }
     }
 
-    fun playerJoin(uuid: UUID, name: String) {
+    init {
+        instance = this
+    }
+
+    override fun playerLogin(uuid: UUID, name: String, skin: String) {
         if (collection.find(DatabasePlayer::uuid eq uuid).first() != null) {
             collection.updateOne(DatabasePlayer::uuid eq uuid, DatabasePlayer::name setTo name)
             return
@@ -36,21 +42,21 @@ object PlayerCollection {
 
     fun addFriend(uuid: UUID, friend: UUID) {
         val friends = getMutableFriends(uuid)
-        friends.add(friend)
+        friends.add(friend.toString())
         collection.updateOne(DatabasePlayer::uuid eq uuid, DatabasePlayer::friends setTo friends)
     }
 
     fun removeFriend(uuid: UUID, friend: UUID) {
         val friends = getMutableFriends(uuid)
-        friends.remove(friend)
+        friends.remove(friend.toString())
         collection.updateOne(DatabasePlayer::uuid eq uuid, DatabasePlayer::friends setTo friends)
     }
 
-    fun getFriends(uuid: UUID): List<UUID> {
+    fun getFriends(uuid: UUID): List<String> {
         return collection.find(DatabasePlayer::uuid eq uuid).first()?.friends ?: emptyList()
     }
 
-    private fun getMutableFriends(uuid: UUID): MutableList<UUID> {
+    private fun getMutableFriends(uuid: UUID): MutableList<String> {
         return getFriends(uuid).toMutableList()
     }
 

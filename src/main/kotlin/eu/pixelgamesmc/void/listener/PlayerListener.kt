@@ -2,37 +2,37 @@ package eu.pixelgamesmc.void.listener
 
 import eu.pixelgamesmc.void.Void
 import eu.pixelgamesmc.void.configuration.ServerConfiguration
+import eu.pixelgamesmc.void.database.PixelDatabase
+import eu.pixelgamesmc.void.database.collection.DatabasePlayerCollection
 import eu.pixelgamesmc.void.database.collection.PlayerCollection
 import eu.pixelgamesmc.void.scoreboard.ScoreboardManager
 import eu.pixelgamesmc.void.utils.PREFIX
-import io.papermc.paper.event.player.AsyncChatEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.player.AsyncPlayerChatEvent
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerJoinEvent
-import org.bukkit.event.player.PlayerMoveEvent
-import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.event.player.PlayerRespawnEvent
+import org.bukkit.event.player.*
 import org.bukkit.inventory.ItemStack
-import java.util.UUID
 import kotlin.random.Random
 
 class PlayerListener: Listener {
 
-    private val away = hashMapOf<UUID, Int>()
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun asyncPlayerPreLogin(event: AsyncPlayerPreLoginEvent) {
+        PixelDatabase.getCollections(PlayerCollection::class).forEach { playerCollection ->
+            playerCollection.playerLogin(event.uniqueId, event.name, event.playerProfile.textures.skin.toString())
+        }
+    }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
@@ -43,14 +43,10 @@ class PlayerListener: Listener {
 
         if (world != null) {
             val location = world.spawnLocation.add(0.5, 0.0, 0.5)
-            location.yaw = 90f
-            location.pitch = 0f
             player.teleport(location)
         }
 
-        PlayerCollection.playerJoin(player.uniqueId, player.name)
-        ScoreboardManager.createScoreboards()
-        ScoreboardManager.updateTablists()
+        ScoreboardManager.updateScoreboard(player)
 
         val scheduler = Bukkit.getScheduler()
         var time = 0
@@ -61,14 +57,14 @@ class PlayerListener: Listener {
             if (!Void.INSTANCE.away.contains(player.uniqueId)) {
                 if (player.world.name != ServerConfiguration.getWorldLobby()) {
                     if (time == 0) {
-                        val materials = Material.values()
+                        val materials = Material.values().filter { !it.isAir }
                         val inventory = player.inventory
                         val contents = inventory.contents
                         inventory.addItem(ItemStack(materials[Random.nextInt(1, materials.size)]))
 
                         if (!contents.contentEquals(inventory.contents)) {
-                            PlayerCollection.addItem(player.uniqueId)
-                            ScoreboardManager.createScoreboards()
+                            DatabasePlayerCollection.getInstance().addItem(player.uniqueId)
+                            ScoreboardManager.updateScoreboards()
                         }
                         time = 30
                     }
@@ -86,7 +82,7 @@ class PlayerListener: Listener {
         val player = event.player
         val uniqueId = player.uniqueId
 
-        ScoreboardManager.updateTablists()
+        ScoreboardManager.removeScoreboard(player)
 
         event.quitMessage(PREFIX.append(Component.text(player.name, NamedTextColor.YELLOW))
             .append(Component.text(" hat das Spiel verlassen", NamedTextColor.GRAY)))
@@ -110,13 +106,16 @@ class PlayerListener: Listener {
     @EventHandler
     fun playerDeath(event: PlayerDeathEvent) {
         val player = event.player
-        PlayerCollection.addDeath(player.uniqueId)
+        DatabasePlayerCollection.getInstance().addDeath(player.uniqueId)
 
         event.keepInventory = true
         event.keepLevel = true
+        event.drops.clear()
 
         event.deathMessage(PREFIX.append(Component.text(player.name, NamedTextColor.YELLOW))
             .append(Component.text(" ist gestorben", NamedTextColor.GRAY)))
+
+        ScoreboardManager.updateScoreboard(player)
     }
 
     @EventHandler
@@ -131,6 +130,12 @@ class PlayerListener: Listener {
         if (Void.INSTANCE.away.contains(uniqueId)) {
             Void.INSTANCE.away.remove(uniqueId)
             event.player.sendMessage(PREFIX.append(Component.text("Du bist nun nicht mehr AFK", NamedTextColor.GRAY)))
+        }
+
+        if (event.player.world.name == ServerConfiguration.getWorldLobby()) {
+            if (event.to.y <= 40) {
+                event.player.teleport(event.player.world.spawnLocation)
+            }
         }
     }
 
@@ -169,13 +174,8 @@ class PlayerListener: Listener {
         }
     }
 
-    @EventHandler
-    fun chat(event: AsyncChatEvent) {
-        for (player in Bukkit.getOnlinePlayers()) {
-            player.sendMessage(Component.text(event.player.name, NamedTextColor.GRAY, TextDecoration.BOLD)
-                .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                .append(event.originalMessage().color(NamedTextColor.GRAY)))
-        }
-        event.isCancelled = true
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun drop(event: PlayerDropItemEvent) {
+        event.isCancelled = false
     }
 }
