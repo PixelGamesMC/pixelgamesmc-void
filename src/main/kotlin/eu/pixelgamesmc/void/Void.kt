@@ -22,7 +22,7 @@ import org.bukkit.event.entity.SpawnerSpawnEvent
 import org.bukkit.event.weather.WeatherChangeEvent
 import org.bukkit.plugin.java.JavaPlugin
 import org.litote.kmongo.getCollection
-import java.util.UUID
+import java.util.*
 
 class Void: JavaPlugin() {
 
@@ -32,7 +32,7 @@ class Void: JavaPlugin() {
     }
 
     val locations = hashMapOf<UUID, Location>()
-    val away = mutableListOf<UUID>()
+    val away = Collections.synchronizedList(mutableListOf<UUID>())
 
     override fun onEnable() {
         INSTANCE = this
